@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --cream: #fffdf8;
+  --cream-2: #fff7ec;
+  --primary: #7c3aed;
+  --primary-light: #a78bfa;
+  --primary-soft: #f3e8ff;
+  --text-primary: #1f1b3a;
+  --text-secondary: #7a7390;
+  --border: #e9e1f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--cream);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(167, 139, 250, 0.18), transparent 25rem),
+    radial-gradient(circle at 85% 18%, rgba(251, 113, 133, 0.1), transparent 26rem),
+    linear-gradient(180deg, #fffdf8 0%, #fffaf1 42%, #f9f4ff 100%);
+  color: var(--text-primary);
+  font-family:
+    Inter,
+    system-ui,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(124, 58, 237, 0.16);
+}
+
+@layer components {
+  .cream-card {
+    @apply border border-bean-border/80 bg-white/80 shadow-soft backdrop-blur-xl;
+  }
+
+  .soft-panel {
+    @apply border border-bean-border/70 bg-gradient-to-br from-white via-white to-milk-purple-soft/40 shadow-soft;
+  }
+
+  .primary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-purple-button px-5 py-3 font-semibold text-white shadow-bead transition hover:-translate-y-0.5 hover:shadow-soft active:translate-y-0;
+  }
+
+  .ghost-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-bean-border bg-white/80 px-4 py-3 font-semibold text-milk-purple transition hover:border-milk-purple-light hover:bg-milk-purple-soft/80;
+  }
+
+  .bead-board {
+    background-image: radial-gradient(circle, rgba(124, 58, 237, 0.18) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  .bead-sparkle {
+    @apply absolute rounded-full border border-white/70 shadow-bead;
+    background: radial-gradient(circle at 35% 30%, #fff 0 14%, var(--bead-color, #a78bfa) 15% 100%);
+  }
+}
