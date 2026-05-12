@@ -6,17 +6,17 @@ export const SIZE_OPTIONS: Array<{
   detail: string;
   grid: [number, number];
 }> = [
-  { value: "small", label: "小号", detail: "约 9 x 9cm", grid: [24, 24] },
-  { value: "medium", label: "中号", detail: "约 14 x 14cm", grid: [40, 40] },
-  { value: "large", label: "大号", detail: "约 21 x 21cm", grid: [64, 64] },
-  { value: "custom", label: "自定义", detail: "后续开放", grid: [40, 40] }
+  { value: "small", label: "小号", detail: "80 x 80", grid: [80, 80] },
+  { value: "medium", label: "中号", detail: "120 x 120", grid: [120, 120] },
+  { value: "large", label: "大号", detail: "180 x 180", grid: [180, 180] },
+  { value: "custom", label: "自定义", detail: "最高 420 列", grid: [160, 160] }
 ];
 
 export const COLOR_OPTIONS = [
-  { value: 12, label: "12 色", hint: "更简洁" },
-  { value: 24, label: "24 色", hint: "新手友好" },
-  { value: 36, label: "36 色", hint: "平衡细节" },
-  { value: 48, label: "48 色", hint: "更丰富" }
+  { value: 48, label: "48 色", hint: "更简洁" },
+  { value: 96, label: "96 色", hint: "复杂图片" },
+  { value: 128, label: "128 色", hint: "高保真" },
+  { value: 221, label: "221 色", hint: "Mard 全色" }
 ];
 
 export const DIFFICULTY_OPTIONS: Array<{

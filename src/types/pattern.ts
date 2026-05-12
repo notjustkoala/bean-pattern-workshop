@@ -1,15 +1,20 @@
 export type Difficulty = "easy" | "standard" | "detailed";
 export type BackgroundMode = "simplify" | "keep" | "remove";
 export type BeadSize = "2.6mm" | "5mm" | "10mm";
+export type ColorMergeMode = "preserve" | "balanced" | "compact";
 
 export type PatternConfig = {
   finishedSize: "small" | "medium" | "large" | "custom";
   customWidthCm?: number;
   customHeightCm?: number;
   beadSize: BeadSize;
+  aspectRatio: number;
+  targetBeadCount: number;
   gridWidth: number;
   gridHeight: number;
   colorCount: number;
+  colorMergeStrength: number;
+  colorMergeMode: ColorMergeMode;
   difficulty: Difficulty;
   backgroundMode: BackgroundMode;
   aiColorReduce: boolean;

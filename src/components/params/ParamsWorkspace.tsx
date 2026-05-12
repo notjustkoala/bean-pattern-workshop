@@ -5,11 +5,13 @@ import { ArrowLeft, ArrowRight, ImagePlus, SlidersHorizontal, Sparkles } from "l
 import { BeadMascot } from "@/components/shared/BeadMascot";
 import { WorkflowSteps } from "@/components/shared/WorkflowSteps";
 import { BACKGROUND_OPTIONS, COLOR_OPTIONS, DIFFICULTY_OPTIONS, SIZE_OPTIONS } from "@/lib/constants/params";
+import { deriveGridFromTargetBeadCount } from "@/lib/pattern/grid";
 import { cn } from "@/lib/utils/cn";
 import { usePatternStore } from "@/stores/pattern-store";
 import type { BeadSize } from "@/types/pattern";
 import { EstimateSummary, getPatternEstimate } from "./EstimateSummary";
 import { ParamOptionCard } from "./ParamOptionCard";
+import { PatternControlSliders } from "./PatternControlSliders";
 
 const beadSizeOptions: Array<{ value: BeadSize; label: string; hint: string }> = [
   { value: "2.6mm", label: "2.6mm 迷你豆", hint: "更精细" },
@@ -30,10 +32,11 @@ export function ParamsWorkspace() {
   const estimate = getPatternEstimate(config);
 
   function updateSize(option: (typeof SIZE_OPTIONS)[number]) {
+    const grid = deriveGridFromTargetBeadCount(option.grid[0] * option.grid[1], config.aspectRatio);
+
     updateConfig({
       finishedSize: option.value,
-      gridWidth: option.grid[0],
-      gridHeight: option.grid[1]
+      ...grid
     });
   }
 
@@ -85,7 +88,6 @@ export function ParamsWorkspace() {
                       key={option.value}
                       active={config.finishedSize === option.value}
                       badge={option.value === "medium" ? "推荐" : undefined}
-                      disabled={option.value === "custom"}
                       hint={option.detail}
                       label={option.label}
                       onClick={() => updateSize(option)}
@@ -115,7 +117,7 @@ export function ParamsWorkspace() {
                     <ParamOptionCard
                       key={option.value}
                       active={config.colorCount === option.value}
-                      badge={option.value === 24 ? "新手友好" : undefined}
+                      badge={option.value === 221 ? "Mard 全色" : undefined}
                       hint={option.hint}
                       label={option.label}
                       onClick={() => updateConfig({ colorCount: option.value })}
@@ -175,6 +177,12 @@ export function ParamsWorkspace() {
                   />
                 </button>
               </div>
+
+              <PatternControlSliders
+                config={config}
+                description="拖动豆子数量、横轴切割和颜色合并模式，复杂图片可以拉高豆数与颜色上限。"
+                onChange={updateConfig}
+              />
             </div>
           </div>
 
@@ -201,7 +209,7 @@ export function ParamsWorkspace() {
           <div className="relative overflow-hidden rounded-4xl border border-bean-border bg-gradient-to-br from-milk-purple-soft via-white to-cream-2 p-5 shadow-soft">
             <div className="relative z-10 max-w-[220px]">
               <p className="text-lg font-black text-bean-ink">小贴士</p>
-              <p className="mt-2 text-sm leading-6 text-bean-muted">新手建议选择 24 色 + 中号尺寸，拼搭体验更舒适。</p>
+              <p className="mt-2 text-sm leading-6 text-bean-muted">动画图建议颜色合并 0% + Mard 221 色，能更接近原图色彩。</p>
             </div>
             <div className="mt-5 flex justify-end">
               <BeadMascot size="md" />

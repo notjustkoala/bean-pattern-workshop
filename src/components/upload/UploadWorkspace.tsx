@@ -112,11 +112,11 @@ export function UploadWorkspace() {
                   </div>
                   <div className="flex items-center justify-between rounded-2xl bg-milk-purple-soft/50 px-3 py-2">
                     <span className="text-bean-muted">推荐尺寸</span>
-                    <span className="font-black text-bean-ink">中号 40 x 40</span>
+                    <span className="font-black text-bean-ink">中号 120 x 120</span>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl bg-milk-purple-soft/50 px-3 py-2">
                     <span className="text-bean-muted">推荐颜色</span>
-                    <span className="font-black text-bean-ink">24 色</span>
+                    <span className="font-black text-bean-ink">Mard 221 色</span>
                   </div>
                 </div>
 

@@ -1,14 +1,25 @@
-﻿"use client";
+"use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ClipboardList, Download, Eye, Palette, Share2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, ClipboardList, Download, Eye, Palette, RefreshCw, Share2 } from "lucide-react";
+import { PatternControlSliders } from "@/components/params/PatternControlSliders";
 import { PatternPreviewCanvas } from "@/components/pattern/PatternPreviewCanvas";
 import { WorkflowSteps } from "@/components/shared/WorkflowSteps";
 import { usePatternStore } from "@/stores/pattern-store";
 
 export default function PreviewPage() {
-  const { croppedImageUrl, sourceImageUrl, generatedPattern } = usePatternStore();
+  const router = useRouter();
+  const { croppedImageUrl, sourceImageUrl, config, generatedPattern, startGenerating, updateConfig } = usePatternStore();
+  const [draftConfig, setDraftConfig] = useState(config);
   const originalImage = croppedImageUrl || sourceImageUrl;
+
+  function applyDraftConfig() {
+    updateConfig(draftConfig);
+    startGenerating();
+    router.push("/workspace/generating");
+  }
 
   if (!generatedPattern) {
     return (
@@ -31,7 +42,7 @@ export default function PreviewPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-black text-bean-ink">图纸预览 / 明细图纸</h1>
-          <p className="mt-1 text-sm text-bean-muted">查看原图与拼豆效果对比，继续进入详细网格或材料推荐。</p>
+          <p className="mt-1 text-sm text-bean-muted">查看原图与拼豆效果对比，拖动参数轴继续优化图纸。</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="ghost-button" href="/workspace/generating">
@@ -45,7 +56,7 @@ export default function PreviewPage() {
         </div>
       </div>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-5">
           <div className="grid gap-5 lg:grid-cols-2">
             <div className="cream-card rounded-4xl p-5">
@@ -83,6 +94,22 @@ export default function PreviewPage() {
         </div>
 
         <aside className="space-y-5">
+          <div className="space-y-3">
+            <PatternControlSliders
+              config={draftConfig}
+              description="生成后仍可继续拖动参数轴，应用后会基于同一张图片重新生成。"
+              title="生成后编辑"
+              onChange={(partial) => setDraftConfig((current) => ({ ...current, ...partial }))}
+            />
+            <button className="primary-button mt-4 w-full justify-between" type="button" onClick={applyDraftConfig}>
+              <span className="inline-flex items-center gap-2">
+                <RefreshCw className="h-5 w-5" />
+                应用参数并重新生成
+              </span>
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
+
           <div className="cream-card rounded-4xl p-5">
             <h2 className="mb-4 text-xl font-black text-bean-ink">使用配色</h2>
             <div className="flex flex-wrap gap-2">

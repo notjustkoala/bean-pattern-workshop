@@ -1,4 +1,5 @@
 import { Clock3, Grid3X3, Palette, Sparkles } from "lucide-react";
+import { getColorMergeLabel } from "@/lib/pattern/grid";
 import type { PatternConfig } from "@/types/pattern";
 
 type EstimateSummaryProps = {
@@ -14,11 +15,12 @@ function getDifficultyFactor(config: PatternConfig) {
 export function getPatternEstimate(config: PatternConfig) {
   const totalCells = config.gridWidth * config.gridHeight;
   const totalBeads = Math.round(totalCells * getDifficultyFactor(config));
-  const hours = Math.max(0.5, totalBeads / 1500);
+  const hours = Math.max(0.5, totalBeads / 1800);
 
   return {
     totalBeads,
     colorCount: config.colorCount,
+    colorMergeLabel: getColorMergeLabel(config.colorMergeStrength),
     hours,
     gridLabel: `${config.gridWidth} x ${config.gridHeight}`
   };
@@ -37,7 +39,13 @@ export function EstimateSummary({ config }: EstimateSummaryProps) {
       icon: Palette,
       label: "预计用色",
       value: `${estimate.colorCount} 色`,
-      hint: config.colorCount <= 24 ? "新手友好配色" : "颜色更丰富"
+      hint: config.colorCount <= 48 ? "平衡配色" : "复杂图片更友好"
+    },
+    {
+      icon: Sparkles,
+      label: "颜色合并",
+      value: estimate.colorMergeLabel,
+      hint: config.colorMergeStrength <= 24 ? "优先保留细节" : "减少相近色干扰"
     },
     {
       icon: Clock3,
@@ -54,7 +62,7 @@ export function EstimateSummary({ config }: EstimateSummaryProps) {
         <h2 className="font-black text-bean-ink">智能预估</h2>
         <span className="text-sm text-bean-muted">基于当前参数</span>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-4">
         {items.map((item) => {
           const Icon = item.icon;
 

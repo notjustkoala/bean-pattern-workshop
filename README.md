@@ -11,6 +11,9 @@ Next.js App Router + TypeScript + Tailwind CSS 的拼豆图纸生成器 MVP。
 - 图纸预览、明细图纸、材料推荐 / 导出页
 - Zustand 本地工作流状态
 - Canvas / Web Worker 图纸生成
+- Mard 221 色卡、Lab 感知色彩匹配与可调颜色合并
+- 滑杆式豆子数量、横轴切割、颜色上限和合并强度设置
+- 裁剪比例锁定，重新生成时保持原始画布比例
 - Supabase 登录、项目保存、项目列表与项目详情
 - Supabase 数据库迁移 SQL
 

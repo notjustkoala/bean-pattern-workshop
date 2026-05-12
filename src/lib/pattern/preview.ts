@@ -9,7 +9,7 @@ export type DrawPatternOptions = {
 };
 
 export function drawPatternPreview(canvas: HTMLCanvasElement | OffscreenCanvas, cells: PatternCell[][], options: DrawPatternOptions = {}) {
-  const context = canvas.getContext("2d");
+  const context = canvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
   if (!context) return;
 
   const cellSize = options.cellSize ?? 10;

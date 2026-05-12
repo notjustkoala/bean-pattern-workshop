@@ -38,9 +38,13 @@ interface PatternState {
 const defaultConfig: PatternConfig = {
   finishedSize: "medium",
   beadSize: "5mm",
-  gridWidth: 40,
-  gridHeight: 40,
-  colorCount: 24,
+  aspectRatio: 1,
+  targetBeadCount: 14400,
+  gridWidth: 120,
+  gridHeight: 120,
+  colorCount: 221,
+  colorMergeStrength: 0,
+  colorMergeMode: "preserve",
   difficulty: "standard",
   backgroundMode: "simplify",
   aiColorReduce: true
@@ -77,6 +81,9 @@ export const usePatternStore = create<PatternState>((set) => ({
           size: file.size,
           type: file.type
         },
+        croppedImageUrl: null,
+        generatedPattern: null,
+        config: { ...state.config, aspectRatio: 1 },
         uploadError: null
       };
     }),
@@ -89,6 +96,9 @@ export const usePatternStore = create<PatternState>((set) => ({
         sourceFile: null,
         sourceImageUrl: url,
         sourceImageMeta: { ...meta, fromExample: true },
+        croppedImageUrl: null,
+        generatedPattern: null,
+        config: { ...state.config, aspectRatio: 1 },
         uploadError: null
       };
     }),
@@ -102,6 +112,8 @@ export const usePatternStore = create<PatternState>((set) => ({
         sourceImageUrl: null,
         sourceImageMeta: null,
         croppedImageUrl: null,
+        generatedPattern: null,
+        config: { ...state.config, aspectRatio: 1 },
         uploadError: null
       };
     }),
@@ -111,6 +123,7 @@ export const usePatternStore = create<PatternState>((set) => ({
   setGeneratedPattern: (pattern) => set({ generatedPattern: pattern, isGenerating: false, generationProgress: 100, generationMessage: "图纸生成完成" }),
   startGenerating: () =>
     set({
+      generatedPattern: null,
       isGenerating: true,
       generationProgress: 8,
       generationMessage: "正在识别图片主体"

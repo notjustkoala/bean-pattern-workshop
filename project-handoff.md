@@ -1,6 +1,6 @@
 # 豆图工坊项目交接文档
 
-最后更新：2026-05-11  
+最后更新：2026-05-12  
 项目：bean-pattern-workshop  
 当前目录：E:\se-learn\pindou\bean-pattern-workshop
 
@@ -41,6 +41,20 @@
 - 导出：`src/lib/pattern/export-image.ts`
 - Supabase：`src/lib/supabase/*`
 - 数据库 SQL：`supabase/migrations/0001_initial_schema.sql`
+
+## 最新迭代记录
+
+2026-05-12：
+
+- 图纸生成算法从 RGB 最近色匹配升级为 Lab 感知色彩匹配。
+- 默认色卡切换为 `all-colors.md` 记录的 Mard 221 色，最终图纸色号只输出 Mard 色号。
+- 新增 `aspectRatio`、`targetBeadCount`、`colorMergeStrength`、`colorMergeMode` 配置。
+- 颜色合并 0% 时使用完整 Mard 色卡，并加入饱和度惩罚，避免动画图匹配到偏灰、偏淡颜色。
+- Worker 在 0% 合并时关闭缩放平滑，优先保留动画图硬边和高饱和色。
+- 豆子数量上限提升到 176400，横轴切割上限提升到 420，颜色上限按 Mard 色卡限制为 221。
+- 裁剪比例会写入配置，后续调横轴切割会按裁剪比例推导纵轴，避免 1:1 重新生成后变形。
+- 参数页新增滑杆式精细参数轴：豆子数量、横轴切割、可用颜色上限、颜色合并模式。
+- 预览页新增“生成后编辑”，用户可以拖动参数轴并基于同一图片重新生成。
 
 ## Supabase 状态
 

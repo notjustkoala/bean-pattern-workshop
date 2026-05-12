@@ -85,7 +85,7 @@ export function GeneratingWorkspace() {
             </h1>
             <p className="mt-4 max-w-xl text-base leading-8 text-bean-muted">
               {complete
-                ? "已完成 Canvas 采样、RGB 最近色匹配、颜色统计和材料推荐。"
+                ? "已完成高精度采样、Lab 感知色彩匹配、颜色合并和材料推荐。"
                 : "Worker 正在后台处理图片，页面会保持响应。"}
             </p>
 

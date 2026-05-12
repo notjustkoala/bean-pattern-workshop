@@ -1,6 +1,7 @@
 ﻿/// <reference lib="webworker" />
 
 import { generatePatternFromImageData } from "@/lib/pattern/generator";
+import { normalizePatternConfig } from "@/lib/pattern/grid";
 import type { PatternWorkerRequest, PatternWorkerResponse } from "@/lib/pattern/worker-types";
 
 const ctx: DedicatedWorkerGlobalScope = self as DedicatedWorkerGlobalScope;
@@ -19,7 +20,7 @@ async function loadImageBitmap(imageUrl: string) {
   return createImageBitmap(blob);
 }
 
-async function createPixelSource(imageUrl: string, width: number, height: number) {
+async function createPixelSource(imageUrl: string, width: number, height: number, config: { colorMergeStrength: number }) {
   const bitmap = await loadImageBitmap(imageUrl);
   const canvas = new OffscreenCanvas(width, height);
   const context = canvas.getContext("2d", { willReadFrequently: true });
@@ -28,8 +29,8 @@ async function createPixelSource(imageUrl: string, width: number, height: number
     throw new Error("当前浏览器不支持 Worker Canvas");
   }
 
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
+  context.imageSmoothingEnabled = config.colorMergeStrength > 0;
+  context.imageSmoothingQuality = config.colorMergeStrength <= 16 ? "medium" : "high";
   context.clearRect(0, 0, width, height);
   context.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
@@ -47,15 +48,16 @@ ctx.onmessage = async (event: MessageEvent<PatternWorkerRequest>) => {
   if (event.data.type !== "generate") return;
 
   const { imageUrl, config, palette } = event.data.payload;
+  const normalizedConfig = normalizePatternConfig(config);
 
   try {
     post({ type: "progress", progress: 12, message: "正在加载图片" });
-    const imageData = await createPixelSource(imageUrl, config.gridWidth, config.gridHeight);
+    const imageData = await createPixelSource(imageUrl, normalizedConfig.gridWidth, normalizedConfig.gridHeight, normalizedConfig);
 
-    post({ type: "progress", progress: 38, message: "正在采样像素网格" });
-    const pattern = generatePatternFromImageData({ config, imageData, palette });
+    post({ type: "progress", progress: 38, message: "正在进行高精度色彩采样" });
+    const pattern = generatePatternFromImageData({ config: normalizedConfig, imageData, palette });
 
-    post({ type: "progress", progress: 78, message: "正在统计颜色和材料" });
+    post({ type: "progress", progress: 78, message: "正在合并相近色并统计材料" });
     post({ type: "progress", progress: 100, message: "图纸生成完成" });
     post({ type: "success", pattern });
   } catch (error) {

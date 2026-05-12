@@ -1,6 +1,4 @@
-import type { BeadColor } from "@/types/pattern";
-
-const MARD_COLOR_DATA = `
+```txt
 A1 #faf5cd
 A2 #fcfed6
 A3 #fcff92
@@ -222,28 +220,4 @@ M12 #644b51
 M13 #c79266
 M14 #c27563
 M15 #747d7a
-`;
-
-function hexToRgb(hex: string): [number, number, number] {
-  const normalized = hex.replace("#", "");
-  return [
-    Number.parseInt(normalized.slice(0, 2), 16),
-    Number.parseInt(normalized.slice(2, 4), 16),
-    Number.parseInt(normalized.slice(4, 6), 16)
-  ];
-}
-
-export const MARD_COLOR_COUNT = 221;
-
-export const DEFAULT_BEAD_PALETTE: BeadColor[] = MARD_COLOR_DATA.trim().split(/\n+/).map((line) => {
-  const [colorCode, hex] = line.trim().split(/\s+/);
-
-  return {
-    id: `mard-${colorCode.toLowerCase()}`,
-    name: `Mard ${colorCode}`,
-    colorCode,
-    hex,
-    rgb: hexToRgb(hex),
-    symbol: colorCode
-  };
-});
+```

@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, ImagePlus, RotateCcw, RotateCw, Sparkles, Undo2,
 import { BeadMascot } from "@/components/shared/BeadMascot";
 import { WorkflowSteps } from "@/components/shared/WorkflowSteps";
 import { getCroppedImage } from "@/lib/image/crop";
+import { deriveGridFromTargetBeadCount, normalizeAspectRatio } from "@/lib/pattern/grid";
 import { cn } from "@/lib/utils/cn";
 import { usePatternStore } from "@/stores/pattern-store";
 
@@ -20,7 +21,7 @@ const ratioOptions = [
 
 export function CropWorkspace() {
   const router = useRouter();
-  const { sourceImageUrl, sourceImageMeta, croppedImageUrl, setCroppedImageUrl } = usePatternStore();
+  const { sourceImageUrl, sourceImageMeta, croppedImageUrl, config, setCroppedImageUrl, updateConfig } = usePatternStore();
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -45,7 +46,13 @@ export function CropWorkspace() {
       setError(null);
       setIsSaving(true);
       const cropped = await getCroppedImage(sourceImageUrl, croppedAreaPixels, rotation);
+      const aspectRatio = normalizeAspectRatio(croppedAreaPixels.width / croppedAreaPixels.height);
+      const grid = deriveGridFromTargetBeadCount(config.targetBeadCount, aspectRatio);
       setCroppedImageUrl(cropped);
+      updateConfig({
+        ...grid,
+        aspectRatio
+      });
       router.push("/workspace/params");
     } catch {
       setError("裁剪失败，请换一张图片或重新调整裁剪框");
