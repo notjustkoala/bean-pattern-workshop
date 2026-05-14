@@ -62,26 +62,35 @@ function labChroma(lab: Lab) {
   return Math.sqrt(lab[1] ** 2 + lab[2] ** 2);
 }
 
-function findNearestMardColor(cell: WorkingCell, palette: LabBeadColor[], config: PatternConfig) {
+function rgbLuma(rgb: Rgb) {
+  return rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114;
+}
+
+function rgbSaturation(rgb: Rgb) {
+  return Math.max(...rgb) - Math.min(...rgb);
+}
+
+function getMatchScore(cell: WorkingCell, color: LabBeadColor, config: PatternConfig) {
   const sourceChroma = labChroma(cell.lab);
-  const chromaPenaltyWeight = config.colorMergeStrength <= 0 ? 0.32 : 0.16;
-  const rgbPenaltyWeight = config.colorMergeStrength <= 0 ? 0.018 : 0.008;
+  const cartoonExactMode = config.imageMode === "cartoon" && config.colorMergeStrength <= 20;
+  const preserveMode = config.colorMergeStrength <= 0;
+  const chromaPenaltyWeight = cartoonExactMode ? 0.52 : preserveMode ? 0.3 : 0.16;
+  const rgbPenaltyWeight = cartoonExactMode ? 0.072 : preserveMode ? 0.018 : 0.008;
+  const lightnessPenaltyWeight = cartoonExactMode ? 0.36 : preserveMode ? 0.06 : 0.04;
 
+  return (
+    labDistance(cell.lab, color.lab) +
+    Math.abs(sourceChroma - labChroma(color.lab)) * chromaPenaltyWeight +
+    Math.abs(rgbLuma(cell.rgb) - rgbLuma(color.rgb)) * lightnessPenaltyWeight +
+    Math.abs(cell.rgb[0] - color.rgb[0]) * rgbPenaltyWeight +
+    Math.abs(cell.rgb[1] - color.rgb[1]) * rgbPenaltyWeight +
+    Math.abs(cell.rgb[2] - color.rgb[2]) * rgbPenaltyWeight
+  );
+}
+
+function findNearestMardColor(cell: WorkingCell, palette: LabBeadColor[], config: PatternConfig) {
   return palette.reduce((nearest, current) => {
-    const currentScore =
-      labDistance(cell.lab, current.lab) +
-      Math.abs(sourceChroma - labChroma(current.lab)) * chromaPenaltyWeight +
-      Math.abs(cell.rgb[0] - current.rgb[0]) * rgbPenaltyWeight +
-      Math.abs(cell.rgb[1] - current.rgb[1]) * rgbPenaltyWeight +
-      Math.abs(cell.rgb[2] - current.rgb[2]) * rgbPenaltyWeight;
-    const nearestScore =
-      labDistance(cell.lab, nearest.lab) +
-      Math.abs(sourceChroma - labChroma(nearest.lab)) * chromaPenaltyWeight +
-      Math.abs(cell.rgb[0] - nearest.rgb[0]) * rgbPenaltyWeight +
-      Math.abs(cell.rgb[1] - nearest.rgb[1]) * rgbPenaltyWeight +
-      Math.abs(cell.rgb[2] - nearest.rgb[2]) * rgbPenaltyWeight;
-
-    return currentScore < nearestScore ? current : nearest;
+    return getMatchScore(cell, current, config) < getMatchScore(cell, nearest, config) ? current : nearest;
   }, palette[0]);
 }
 
@@ -135,6 +144,24 @@ function getEffectiveColorLimit(config: PatternConfig) {
   return Math.max(4, Math.round(config.colorCount * (1 - mergeRatio * 0.72)));
 }
 
+function getPaletteRetentionScore(color: LabBeadColor, count: number, totalBeads: number, config: PatternConfig) {
+  const chroma = labChroma(color.lab);
+  const lightness = rgbLuma(color.rgb);
+  const cartoonMode = config.imageMode === "cartoon";
+  const exactMode = cartoonMode && config.colorMergeStrength <= 24;
+  const detailWeight = 1 + Math.min(0.62, chroma / 145) + (lightness < 96 ? 0.52 : 0) + (lightness > 226 ? -0.18 : 0);
+  const rareButVisible = count >= Math.max(2, totalBeads * 0.00018) ? 1.18 : 1;
+
+  if (exactMode) return count * detailWeight * rareButVisible;
+  if (config.difficulty === "detailed") return count * (1 + (detailWeight - 1) * 0.28);
+
+  return count;
+}
+
+function isDetailColor(color: LabBeadColor) {
+  return labChroma(color.lab) > 38 || rgbLuma(color.rgb) < 92;
+}
+
 function createMaterialPalette(cells: WorkingCell[][], palette: BeadColor[], config: PatternConfig) {
   const labPalette = createLabPalette(palette);
   const frequency = new Map<string, number>();
@@ -155,11 +182,19 @@ function createMaterialPalette(cells: WorkingCell[][], palette: BeadColor[], con
   const rareCountThreshold = Math.round(totalBeads * mergeRatio * 0.0015);
   const retained: LabBeadColor[] = [];
 
-  for (const [colorId, count] of [...frequency.entries()].sort((a, b) => b[1] - a[1])) {
+  const rankedColors = [...frequency.entries()].sort((a, b) => {
+    const colorA = colorById.get(a[0]);
+    const colorB = colorById.get(b[0]);
+    if (!colorA || !colorB) return b[1] - a[1];
+
+    return getPaletteRetentionScore(colorB, b[1], totalBeads, config) - getPaletteRetentionScore(colorA, a[1], totalBeads, config);
+  });
+
+  for (const [colorId, count] of rankedColors) {
     const color = colorById.get(colorId);
     if (!color) continue;
 
-    const isRare = count <= rareCountThreshold;
+    const isRare = count <= rareCountThreshold && !(config.imageMode === "cartoon" && config.difficulty === "detailed" && isDetailColor(color));
     const isTooSimilar = similarityThreshold > 0 && retained.some((retainedColor) => labDistance(color.lab, retainedColor.lab) < similarityThreshold);
 
     if (retained.length < effectiveLimit && (!isRare || retained.length < Math.max(8, effectiveLimit * 0.75)) && !isTooSimilar) {
@@ -195,6 +230,108 @@ function applyPalette(cells: WorkingCell[][], palette: LabBeadColor[], config: P
   );
 }
 
+function isCartoonLineCell(cell?: WorkingCell) {
+  if (!cell || cell.isTransparent) return false;
+
+  const lightness = rgbLuma(cell.rgb);
+  const saturation = rgbSaturation(cell.rgb);
+
+  return lightness < 118 || (lightness < 148 && saturation > 34);
+}
+
+function areLineColorsCompatible(a: WorkingCell, b: WorkingCell) {
+  const bothVeryDark = rgbLuma(a.rgb) < 96 && rgbLuma(b.rgb) < 96;
+
+  return bothVeryDark || Math.abs(rgbLuma(a.rgb) - rgbLuma(b.rgb)) < 46 || Math.abs(labChroma(a.lab) - labChroma(b.lab)) < 34;
+}
+
+function lineBridgeStrength(a: WorkingCell, b: WorkingCell) {
+  const darkStrength = Math.max(0, 180 - rgbLuma(a.rgb)) + Math.max(0, 180 - rgbLuma(b.rgb));
+  const saturationStrength = rgbSaturation(a.rgb) + rgbSaturation(b.rgb);
+
+  return darkStrength + saturationStrength * 0.42;
+}
+
+function copyLineCell(target: WorkingCell, source: WorkingCell): WorkingCell {
+  return {
+    ...target,
+    colorId: source.colorId,
+    colorCode: source.colorCode,
+    hex: source.hex,
+    symbol: source.symbol,
+    rgb: source.rgb,
+    lab: source.lab,
+    isTransparent: false
+  };
+}
+
+function pickLineSource(a: WorkingCell, b: WorkingCell) {
+  if (a.colorId === b.colorId) return a;
+  return rgbLuma(a.rgb) <= rgbLuma(b.rgb) ? a : b;
+}
+
+function bridgeCartoonLineGaps(cells: WorkingCell[][], config: PatternConfig) {
+  if (config.imageMode !== "cartoon" || config.colorMergeStrength > 24) return cells;
+
+  const height = cells.length;
+  const width = cells[0]?.length ?? 0;
+  const result = cells.map((row) => row.map((cell) => ({ ...cell })));
+  const directions = [
+    [1, 0],
+    [0, 1],
+    [1, 1],
+    [1, -1]
+  ] as const;
+  const getCell = (x: number, y: number) => (x >= 0 && x < width && y >= 0 && y < height ? cells[y][x] : undefined);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const current = cells[y][x];
+      if (isCartoonLineCell(current)) continue;
+
+      for (const [dx, dy] of directions) {
+        const before = getCell(x - dx, y - dy);
+        const after = getCell(x + dx, y + dy);
+
+        if (isCartoonLineCell(before) && isCartoonLineCell(after) && before && after && areLineColorsCompatible(before, after) && lineBridgeStrength(before, after) > 128) {
+          result[y][x] = copyLineCell(current, pickLineSource(before, after));
+          break;
+        }
+      }
+    }
+  }
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      for (const [dx, dy] of directions) {
+        const first = getCell(x, y);
+        const second = getCell(x + dx, y + dy);
+        const third = getCell(x + dx * 2, y + dy * 2);
+        const fourth = getCell(x + dx * 3, y + dy * 3);
+
+        if (
+          isCartoonLineCell(first) &&
+          second &&
+          third &&
+          isCartoonLineCell(fourth) &&
+          first &&
+          fourth &&
+          !isCartoonLineCell(second) &&
+          !isCartoonLineCell(third) &&
+          areLineColorsCompatible(first, fourth) &&
+          lineBridgeStrength(first, fourth) > 178
+        ) {
+          const source = pickLineSource(first, fourth);
+          result[y + dy][x + dx] = copyLineCell(second, source);
+          result[y + dy * 2][x + dx * 2] = copyLineCell(third, source);
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 function collectUsedColors(cells: PatternCell[][], palette: BeadColor[]) {
   const usedIds = new Set<string>();
 
@@ -226,7 +363,7 @@ export function generatePatternFromImageData({ config, imageData, palette }: Gen
   }
 
   const workingPalette = selectWorkingPalette(sourceRows, palette, normalizedConfig);
-  const mappedRows = applyPalette(sourceRows, workingPalette, normalizedConfig);
+  const mappedRows = bridgeCartoonLineGaps(applyPalette(sourceRows, workingPalette, normalizedConfig), normalizedConfig);
   const cells: PatternCell[][] = mappedRows.map((row) =>
     row.map((cell) => ({
       x: cell.x,

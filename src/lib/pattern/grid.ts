@@ -76,6 +76,7 @@ export function normalizePatternConfig(config: PatternConfig): PatternConfig {
   return {
     ...config,
     ...grid,
+    imageMode: config.imageMode ?? "realistic",
     colorCount: Math.round(clamp(config.colorCount, PATTERN_LIMITS.colorCount.min, PATTERN_LIMITS.colorCount.max)),
     colorMergeStrength,
     colorMergeMode: getColorMergeMode(colorMergeStrength)

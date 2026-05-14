@@ -38,6 +38,7 @@ interface PatternState {
 const defaultConfig: PatternConfig = {
   finishedSize: "medium",
   beadSize: "5mm",
+  imageMode: "realistic",
   aspectRatio: 1,
   targetBeadCount: 14400,
   gridWidth: 120,
