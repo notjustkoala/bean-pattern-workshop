@@ -2,19 +2,46 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, FileImage, Image as ImageIcon, Trash2 } from "lucide-react";
+import { ParamOptionCard } from "@/components/params/ParamOptionCard";
 import { ExampleImageGrid } from "./ExampleImageGrid";
 import { UploadDropzone } from "./UploadDropzone";
 import { UploadTips } from "./UploadTips";
 import { BeadMascot } from "@/components/shared/BeadMascot";
+import { getColorMergeMode } from "@/lib/pattern/grid";
 import { formatBytes } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { usePatternStore } from "@/stores/pattern-store";
+import type { ImageSourceMode } from "@/types/pattern";
 
 const steps = ["上传图片", "裁剪调整", "参数设置", "生成图纸", "图纸预览"];
 
+const imageModeOptions: Array<{ value: ImageSourceMode; label: string; hint: string; badge?: string }> = [
+  { value: "realistic", label: "真实图片", hint: "风景、人像、宠物", badge: "默认" },
+  { value: "cartoon", label: "Q版 / 像素图", hint: "线条、小图、卡通人物", badge: "细节保真" }
+];
+
 export function UploadWorkspace() {
   const router = useRouter();
-  const { sourceImageUrl, sourceImageMeta, clearSourceImage } = usePatternStore();
+  const { sourceImageUrl, sourceImageMeta, clearSourceImage, config, updateConfig } = usePatternStore();
+
+  function updateImageMode(imageMode: ImageSourceMode) {
+    if (imageMode === "cartoon") {
+      updateConfig({
+        imageMode,
+        aiColorReduce: true,
+        colorCount: 221,
+        colorMergeStrength: 0,
+        colorMergeMode: getColorMergeMode(0),
+        difficulty: "detailed"
+      });
+      return;
+    }
+
+    updateConfig({
+      imageMode,
+      difficulty: config.difficulty === "detailed" ? "standard" : config.difficulty
+    });
+  }
 
   return (
     <div className="space-y-5 lg:space-y-6">
@@ -117,6 +144,23 @@ export function UploadWorkspace() {
                   <div className="flex items-center justify-between rounded-2xl bg-milk-purple-soft/50 px-3 py-2">
                     <span className="text-bean-muted">推荐颜色</span>
                     <span className="font-black text-bean-ink">Mard 221 色</span>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <p className="mb-3 font-black text-bean-ink">图像类型</p>
+                  <div className="grid gap-3">
+                    {imageModeOptions.map((option) => (
+                      <ParamOptionCard
+                        key={option.value}
+                        active={config.imageMode === option.value}
+                        badge={option.badge}
+                        disabled={!sourceImageUrl}
+                        hint={option.hint}
+                        label={option.label}
+                        onClick={() => updateImageMode(option.value)}
+                      />
+                    ))}
                   </div>
                 </div>
 

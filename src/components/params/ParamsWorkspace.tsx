@@ -5,18 +5,22 @@ import { ArrowLeft, ArrowRight, ImagePlus, SlidersHorizontal, Sparkles } from "l
 import { BeadMascot } from "@/components/shared/BeadMascot";
 import { WorkflowSteps } from "@/components/shared/WorkflowSteps";
 import { BACKGROUND_OPTIONS, COLOR_OPTIONS, DIFFICULTY_OPTIONS, SIZE_OPTIONS } from "@/lib/constants/params";
-import { deriveGridFromTargetBeadCount } from "@/lib/pattern/grid";
+import { deriveGridFromTargetBeadCount, getColorMergeMode } from "@/lib/pattern/grid";
 import { cn } from "@/lib/utils/cn";
 import { usePatternStore } from "@/stores/pattern-store";
-import type { BeadSize } from "@/types/pattern";
+import type { BeadSize, ImageSourceMode } from "@/types/pattern";
 import { EstimateSummary, getPatternEstimate } from "./EstimateSummary";
 import { ParamOptionCard } from "./ParamOptionCard";
 import { PatternControlSliders } from "./PatternControlSliders";
 
 const beadSizeOptions: Array<{ value: BeadSize; label: string; hint: string }> = [
   { value: "2.6mm", label: "2.6mm 迷你豆", hint: "更精细" },
-  { value: "5mm", label: "5mm 标准豆", hint: "推荐" },
-  { value: "10mm", label: "10mm 大粒豆", hint: "更轻松" }
+  { value: "5mm", label: "5mm 标准豆", hint: "推荐" }
+];
+
+const imageModeOptions: Array<{ value: ImageSourceMode; label: string; hint: string; badge?: string }> = [
+  { value: "realistic", label: "真实图片", hint: "风景、人像、宠物", badge: "默认" },
+  { value: "cartoon", label: "Q版 / 像素图", hint: "线条、小图、卡通人物", badge: "细节保真" }
 ];
 
 export function ParamsWorkspace() {
@@ -37,6 +41,25 @@ export function ParamsWorkspace() {
     updateConfig({
       finishedSize: option.value,
       ...grid
+    });
+  }
+
+  function updateImageMode(imageMode: ImageSourceMode) {
+    if (imageMode === "cartoon") {
+      updateConfig({
+        imageMode,
+        aiColorReduce: true,
+        colorCount: 221,
+        colorMergeStrength: 0,
+        colorMergeMode: getColorMergeMode(0),
+        difficulty: "detailed"
+      });
+      return;
+    }
+
+    updateConfig({
+      imageMode,
+      difficulty: config.difficulty === "detailed" ? "standard" : config.difficulty
     });
   }
 
@@ -81,6 +104,21 @@ export function ParamsWorkspace() {
             </div>
 
             <div className="space-y-6">
+              <ParamSection icon={<Sparkles className="h-5 w-5" />} title="图像类型">
+                <div className="grid gap-3 md:grid-cols-2">
+                  {imageModeOptions.map((option) => (
+                    <ParamOptionCard
+                      key={option.value}
+                      active={config.imageMode === option.value}
+                      badge={option.badge}
+                      hint={option.hint}
+                      label={option.label}
+                      onClick={() => updateImageMode(option.value)}
+                    />
+                  ))}
+                </div>
+              </ParamSection>
+
               <ParamSection icon={<SlidersHorizontal className="h-5 w-5" />} title="成品大小">
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   {SIZE_OPTIONS.map((option) => (
@@ -97,7 +135,7 @@ export function ParamsWorkspace() {
               </ParamSection>
 
               <ParamSection title="拼豆规格">
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-2">
                   {beadSizeOptions.map((option) => (
                     <ParamOptionCard
                       key={option.value}
@@ -209,7 +247,7 @@ export function ParamsWorkspace() {
           <div className="relative overflow-hidden rounded-4xl border border-bean-border bg-gradient-to-br from-milk-purple-soft via-white to-cream-2 p-5 shadow-soft">
             <div className="relative z-10 max-w-[220px]">
               <p className="text-lg font-black text-bean-ink">小贴士</p>
-              <p className="mt-2 text-sm leading-6 text-bean-muted">动画图建议颜色合并 0% + Mard 221 色，能更接近原图色彩。</p>
+              <p className="mt-2 text-sm leading-6 text-bean-muted">卡通人物、像素图和线稿建议选择 Q版 / 像素图，线条和小色块会更清晰。</p>
             </div>
             <div className="mt-5 flex justify-end">
               <BeadMascot size="md" />
